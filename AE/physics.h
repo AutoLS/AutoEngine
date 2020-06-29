@@ -80,6 +80,7 @@ void IntegrateAngularMotion(rigid_body* Body, real32 t)
 	Body->AABB = ComputeAABB(Shape->Center, Shape->Vertices, Shape->Count);
 }
 
+// This function is incomplete, it doesn't work. It's for testing purposes.
 void ResolveCollision(rigid_body* BodyA, rigid_body* BodyB, 
 					  collide_result* CollideResult, real32 dt)
 {
