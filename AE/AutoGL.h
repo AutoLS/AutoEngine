@@ -30,6 +30,13 @@ struct texture_data
 	bool Success;
 };
 
+struct simple_renderer
+{
+	uint32 Shader;
+	object_data Rect;
+	object_data Tri;
+};
+
 //Functions for loading uniforms to shaders
 void SetReal32(uint32 Shader, char* Location, real32 A);
 void SetVec3(uint32 Shader, char* Location, v3 A);
@@ -52,6 +59,8 @@ void AttribPointer( object_data* Object, uint32 MemLoc,
 					int Size, 
 					GLsizei Stride, 
 					int Offset);
+
+simple_renderer InitSimpleRenderer();
 
 void SetGlobalUniforms(uint32 Renderer, mat4 Projection, mat4 View);
 

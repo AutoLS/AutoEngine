@@ -58,6 +58,44 @@ void AttribPointer(object_data* Object, uint32 MemLoc, int Size, GLsizei Stride,
 	glBindVertexArray(0);
 }
 
+simple_renderer InitSimpleRenderer(char* VertPath, char* FragPath)
+{
+	simple_renderer Renderer = {};
+	Renderer.Shader = 
+	CreateRenderer(LoadShaderSource(VertPath), 
+				   LoadShaderSource(FragPath));
+	
+	v3 RectObjectVert[] =
+	{
+		V3(0.5f, 0.5f),   V3(1, 1),	//Top Right		
+		V3(0.5f, -0.5f),  V3(1, 0),	//Bottom Right
+		V3(-0.5f, -0.5f), V3(),		//Bottom Left
+		V3(-0.5f, -0.5f), V3(),		//Bottom Left
+		V3(-0.5f, 0.5f),  V3(0, 1),	//Top Left
+		V3(0.5f, 0.5f),   V3(1, 1)	//Top Right	
+	};
+	
+	v3 TriObjectVert[] =
+	{
+		V3(0, 0.5f),  V3(0.5, 1),	//Top Centre
+		V3(-0.5f, -0.5f), V3(),		//Bottom Left
+		V3(0.5f, -0.5f),  V3(1, 0),	//Bottom Right
+	};
+	
+	Renderer.Rect = InitObject(RectObjectVert, 6, ArraySize(RectObjectVert));
+	UploadObjectData(&Renderer.Rect);
+	AttribPointer(&Renderer.Rect, 0, 3, 6, 0);
+	AttribPointer(&Renderer.Rect, 1, 3, 6, 3);
+	
+	Renderer.Tri = 
+	InitObject(TriObjectVert, 3, ArraySize(TriObjectVert));
+	UploadObjectData(&Renderer.Tri);
+	AttribPointer(&Renderer.Tri, 0, 3, 6, 0);
+	AttribPointer(&Renderer.Tri, 1, 3, 6, 3);
+	
+	return Renderer;
+}
+
 void SetGlobalUniforms(uint32 Renderer, mat4 Projection, mat4 View)
 {
 	SetMat4(Renderer, "Projection", Projection);
@@ -67,6 +105,8 @@ void SetGlobalUniforms(uint32 Renderer, mat4 Projection, mat4 View)
 void DrawObject(uint32 Renderer, object_data* Object, v3 Pos, v3 Dim, 
 					real32 Theta, v3 Axis, v4 Color, uint32 Texture, bool Blend)
 {
+	Assert(Object);
+	
 	glUseProgram(Renderer);
 	SetVec4(Renderer, "Color", Color);
 	
@@ -405,7 +445,6 @@ texture_data LoadTextureGLEX(char* Path, bool Alpha, bool Flip)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			
 		}
 		
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
