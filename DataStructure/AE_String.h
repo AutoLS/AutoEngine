@@ -83,4 +83,10 @@ void AE_PrintStrLn(AE_String* Str)
 	printf("%s\n", Str->Data);
 }
 
+void AE_FreeString(AE_String* Str)
+{
+	Assert(Str->Data);
+	free(Str->Data);
+}
+
 #endif
