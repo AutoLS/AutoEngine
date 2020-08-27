@@ -13,14 +13,12 @@ AE_String AE_Str(const char* Data)
 	int Length = (int)strlen(Data);
 	
 	AE_String Str = {};
-	Str.Capacity = Length;
+	Str.Capacity = Length+1;
 	Str.Length = Length;
 	Str.Data = (char*)calloc(Str.Capacity, sizeof(char));
 	
-	for(int i = 0; i < Str.Length; ++i)
-	{
-		Str.Data[i] = Data[i];
-	}
+	memcpy(Str.Data, Data, Length);
+	Str.Data[Length] = '\0';
 	
 	return Str;
 }
