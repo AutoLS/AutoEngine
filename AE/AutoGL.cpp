@@ -220,7 +220,7 @@ void DrawShape(uint32 Renderer, v2* Vertices, int Count, v4 Color,
 	glDeleteBuffers(1, &Object.VBO);
 }
 
-void RenderSprite(uint32 Renderer, texture_data Texture, rect32* Clips, 
+void RenderSprite(uint32 Renderer, uint32 Texture, rect32* Clips, 
 					object_data* Object, render_flip Flip, v3 Pos, v3 Dim, 
 					real32 Theta, v3 Axis)
 {
@@ -265,9 +265,9 @@ void RenderSprite(uint32 Renderer, texture_data Texture, rect32* Clips,
 	Transform = Translate(Transform, Pos);
 	SetMat4(Renderer, "Transform", Transform);
 	
-	SetInt(Renderer, "Texture1", 0);
+	SetInt(Renderer, "Texture", 0);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, Texture.ID);
+	glBindTexture(GL_TEXTURE_2D, Texture);
 	
 	glBindVertexArray(Object->VAO);
 	glDrawArrays(GL_TRIANGLES, 0, Object->Count);
