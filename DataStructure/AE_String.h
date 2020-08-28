@@ -10,57 +10,97 @@ struct AE_String
 
 AE_String AE_Str(const char* Data)
 {
-	int Length = (int)strlen(Data);
-	
 	AE_String Str = {};
-	Str.Capacity = Length+1;
-	Str.Length = Length;
-	Str.Data = (char*)calloc(Str.Capacity, sizeof(char));
+
+	if(Data)
+	{
+		int Length = (int)strlen(Data);
 	
-	memcpy(Str.Data, Data, Length);
-	Str.Data[Length] = '\0';
+		Str.Capacity = Length+1;
+		Str.Length = Length;
+		Str.Data = (char*)calloc(Str.Capacity, sizeof(char));
+		
+		memcpy(Str.Data, Data, Length);
+		Str.Data[Length] = '\0';
+	}
+	else
+	{
+		Str.Capacity = 1;
+		Str.Length = 1;
+		Str.Data = (char*)calloc(Str.Capacity, sizeof(char));
+	}
 	
 	return Str;
 }
 
 AE_String& operator+=(AE_String& Str, const char* Data)
 {
-	int Length = (int)strlen(Data);
-	int NewLen = Length + Str.Length;
-	
-	if(Str.Capacity < NewLen)
+	if(Data)
 	{
-		Str.Capacity = NewLen * 2;
+		int Length = (int)strlen(Data);
+		int NewLen = Length + Str.Length;
 		
-		char* NewStr = (char*)calloc(Str.Capacity, sizeof(char));
-		for(int i = 0; i < Length; ++i)
+		if(Str.Capacity < NewLen)
 		{
-			NewStr[i] = Str.Data[i];
+			Str.Capacity = NewLen * 2;
+			
+			char* NewStr = (char*)calloc(Str.Capacity, sizeof(char));
+			for(int i = 0; i < Length; ++i)
+			{
+				NewStr[i] = Str.Data[i];
+			}
+			
+			int Count = 0;
+			for(int i = Str.Length; i < NewLen; ++i)
+			{
+				NewStr[i] = Data[Count++];
+			}
+			
+			free(Str.Data);
+			
+			Str.Length = NewLen;
+			Str.Data = NewStr;
 		}
-		
-		int Count = 0;
-		for(int i = Str.Length; i < NewLen; ++i)
+		else
 		{
-			NewStr[i] = Data[Count++];
+			int Count = 0;
+			for(int i = Str.Length; i < NewLen; ++i)
+			{
+				Str.Data[i] = Data[Count++];
+			}
+			
+			Str.Length = NewLen;
 		}
-		
-		free(Str.Data);
-		
-		Str.Length = NewLen;
-		Str.Data = NewStr;
-	}
-	else
-	{
-		int Count = 0;
-		for(int i = Str.Length; i < NewLen; ++i)
-		{
-			Str.Data[i] = Data[Count++];
-		}
-		
-		Str.Length = NewLen;
 	}
 	
 	return Str;
+}
+
+AE_String AE_Substr(AE_String* Str, int Start, int End)
+{
+	AE_String NewStr = {};
+	int Length = End - Start + 1;
+	char* Buffer = (char*)malloc(sizeof(char) * Length);
+	memcpy(Buffer, &Str->Data[Start], Length);
+	Buffer[Length] = '\0';
+	
+	NewStr = AE_Str(Buffer);
+	free(Buffer);
+	
+	return NewStr;
+}
+
+int AE_IndexOfReverse(AE_String* Str, char c, int Start)
+{
+	while(Start > 0)
+	{
+		if(c == Str->Data[Start])
+		{
+			return Start;
+		}
+		--Start;
+	}
+	return -1;
 }
 
 AE_String operator+(AE_String StrA, AE_String StrB)
