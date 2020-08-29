@@ -1,6 +1,8 @@
 #ifndef AE_STRING
 #define AE_STRING
 
+//NOTE: These are for testing only!!
+
 struct AE_String
 {
 	char* Data;
@@ -11,7 +13,7 @@ struct AE_String
 AE_String AE_Str(const char* Data)
 {
 	AE_String Str = {};
-
+	
 	if(Data)
 	{
 		int Length = (int)strlen(Data);
@@ -19,7 +21,6 @@ AE_String AE_Str(const char* Data)
 		Str.Capacity = Length+1;
 		Str.Length = Length;
 		Str.Data = (char*)calloc(Str.Capacity, sizeof(char));
-		
 		memcpy(Str.Data, Data, Length);
 		Str.Data[Length] = '\0';
 	}
@@ -45,7 +46,7 @@ AE_String& operator+=(AE_String& Str, const char* Data)
 			Str.Capacity = NewLen * 2;
 			
 			char* NewStr = (char*)calloc(Str.Capacity, sizeof(char));
-			for(int i = 0; i < Length; ++i)
+			for(int i = 0; i < Str.Length; ++i)
 			{
 				NewStr[i] = Str.Data[i];
 			}
