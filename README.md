@@ -1,5 +1,7 @@
 # AutoEngine
-My personal game engine
+My personal game engine. 
+
+Since it's my first engine it's pretty messy so I'm planning to rewrite the engine soon and going to build as a dll. 
 
 This engine uses SDL2.0, glad, and stb libraries.
 
