@@ -5,6 +5,8 @@
 #include <SDL_Net.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
+#include <vector>
 #include <string>
 #include <dirent.h>
 #include <shellapi.h>
@@ -32,10 +34,16 @@ typedef uint64_t uint64;
 #define STB_SPRINTF_IMPLEMENTATION
 #include "stb_sprintf.h"
 
-#include <data_structure/data_structure.cpp>
+#if PROJECT_GL
+#include <glad\glad.h>
+#include "glad.c"
+#endif
+
+#include "../data_structure/data_structure.cpp"
 #include "math.h"
 #include "platform.h"
 #include "platform.cpp"
+#include "AutoImage.h"
 
 #include "AutoPolygon.h"
 #include "AutoCollision.h"

@@ -102,8 +102,9 @@ void SetGlobalUniforms(uint32 Renderer, mat4 Projection, mat4 View)
 	SetMat4(Renderer, "View", View);
 }
 
+#ifdef USE_LEGACY_MATH
 void DrawObject(uint32 Renderer, object_data* Object, v3 Pos, v3 Dim, 
-					real32 Theta, v3 Axis, v4 Color, uint32 Texture, bool Blend)
+				real32 Theta, v3 Axis, v4 Color, uint32 Texture, bool Blend)
 {
 	Assert(Object);
 	
@@ -123,7 +124,7 @@ void DrawObject(uint32 Renderer, object_data* Object, v3 Pos, v3 Dim,
 	}
 	if(Texture)
 	{
-		SetInt(Renderer, "Texture1", 0);
+		SetInt(Renderer, "Texture", 0);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, Texture);
 	}
@@ -178,46 +179,6 @@ void BasicDraw(uint32 Renderer, object_data* Object,
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);
 	glUseProgram(0);
-}
-
-void DrawShape(uint32 Renderer, v2* Vertices, int Count, v4 Color, 
-			   bool Blend, bool WireFrame)
-{
-	v3* Vertices_3 = (v3*)malloc(sizeof(v3) * Count);
-	for(int i = 0; i < Count; ++i)
-	{
-		Vertices_3[i] = V3(Vertices[i]);
-	}
-	object_data Object = InitObject(Vertices_3, Count, Count);
-	UploadObjectData(&Object);
-	AttribPointer(&Object, 0, 3, 3, 0);
-	
-	glUseProgram(Renderer);
-	SetVec4(Renderer, "Color", Color);
-	
-	mat4 Transform = Mat4();
-	SetMat4(Renderer, "Transform", Transform);
-	
-	if(Blend)
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-	if(WireFrame)
-	{
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	}
-	
-	glBindVertexArray(Object.VAO);
-	glDrawArrays(GL_LINE_LOOP, 0, Object.Count);
-	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDisable(GL_BLEND);
-	glBindVertexArray(0);
-	glUseProgram(0);
-	
-	glDeleteBuffers(1, &Object.VAO);
-	glDeleteBuffers(1, &Object.VBO);
 }
 
 void RenderSprite(uint32 Renderer, uint32 Texture, rect32* Clips, 
@@ -275,12 +236,67 @@ void RenderSprite(uint32 Renderer, uint32 Texture, rect32* Clips,
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
+#endif
 
-void UpdateTextureGL(uint32 Texture, char* Path, bool Alpha, bool Flip)
+void DrawGL(GLenum Mode, v3* Vertices, int Count, v4 DrawColor = Color())
+{
+	glColor4fv((real32*)&DrawColor);
+	
+	glBegin(Mode);
+	
+	for(int i = 0; i < Count; ++i)
+	{
+		glVertex3fv((real32*)&Vertices[i]);
+	}
+	
+	glEnd();
+} 
+
+void DrawShape(uint32 Renderer, v2* Vertices, int Count, v4 Color, 
+			   bool Blend, bool WireFrame)
+{
+	v3* Vertices_3 = (v3*)malloc(sizeof(v3) * Count);
+	for(int i = 0; i < Count; ++i)
+	{
+		Vertices_3[i] = V3(Vertices[i]);
+	}
+	object_data Object = InitObject(Vertices_3, Count, Count);
+	UploadObjectData(&Object);
+	AttribPointer(&Object, 0, 3, 3, 0);
+	
+	glUseProgram(Renderer);
+	SetVec4(Renderer, "Color", Color);
+	
+	mat4 Transform = Mat4();
+	SetMat4(Renderer, "Transform", Transform);
+	
+	if(Blend)
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	if(WireFrame)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
+	
+	glBindVertexArray(Object.VAO);
+	glDrawArrays(GL_LINE_LOOP, 0, Object.Count);
+	
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_BLEND);
+	glBindVertexArray(0);
+	glUseProgram(0);
+	
+	glDeleteBuffers(1, &Object.VAO);
+	glDeleteBuffers(1, &Object.VBO);
+}
+
+void UpdateTextureGL(uint32 Texture, char* Path, bool Alpha, bool Flip, int n = 0)
 {
 	stbi_set_flip_vertically_on_load(Flip);
 	int Width, Height, Components;
-    uint8 *Data = stbi_load(Path, &Width, &Height, &Components, 0);
+    uint8 *Data = stbi_load(Path, &Width, &Height, &Components, n);
     if (Data)
     {
         GLenum Format;
@@ -351,7 +367,9 @@ void UpdateTextureGL(texture_data* Texture, char* Path, bool Alpha, bool Flip)
 			
 		}
 		
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, 
+						GL_TEXTURE_MIN_FILTER, 
+						GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         stbi_image_free(Data);
 		Texture->Success = true;
@@ -364,14 +382,33 @@ void UpdateTextureGL(texture_data* Texture, char* Path, bool Alpha, bool Flip)
     }
 }
 
-uint32 LoadTextureGL(char* Path, bool Alpha, bool Flip)
+void CheckTextureAndUpdate(uint32 Texture, char* Path, 
+						   bool Alpha = true, bool Flip = true,
+						   int n = 0)
+{
+	if(glIsTexture(Texture))
+	{
+		UpdateTextureGL(Texture, Path, Alpha, Flip, n);
+	}
+}
+
+void CheckAndReloadTexture(uint32 &Texture, char* Path, bool Alpha, bool Flip)
+{
+	if(glIsTexture(Texture))
+	{
+		glDeleteTextures(1, &Texture);
+		Texture = LoadTextureGL(Path, true, false, 0);
+	}
+}
+
+uint32 LoadTextureGL(char* Path, bool Alpha = true, bool Flip = true, int n = 0)
 {
 	stbi_set_flip_vertically_on_load(Flip);
     uint32 TextureID;
     glGenTextures(1, &TextureID);
     
     int Width, Height, Components;
-    uint8 *Data = stbi_load(Path, &Width, &Height, &Components, 0);
+    uint8 *Data = stbi_load(Path, &Width, &Height, &Components, n);
     if (Data)
     {
         GLenum Format;
@@ -406,6 +443,49 @@ uint32 LoadTextureGL(char* Path, bool Alpha, bool Flip)
     {
         printf("Texture failed to load at path: %s\n", Path);
         stbi_image_free(Data);
+    }
+
+    return TextureID;
+}
+
+uint32 LoadTextureGL(uint8* Data, int Width, int Height, 
+					 bool Alpha = true, int n = 0)
+{
+    uint32 TextureID;
+    glGenTextures(1, &TextureID);
+    
+    if (Data)
+    {
+        GLenum Format;
+        if (n == 1)
+            Format = GL_RED;
+        else if (n == 3)
+            Format = GL_RGB;
+        else if (n == 4)
+            Format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, TextureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, Format, Width, Height, 0, Format, GL_UNSIGNED_BYTE, Data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        
+		if(Alpha)
+		{
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);    
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			
+		}
+		
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else
+    {
+        printf("Texture failed to load\n");
     }
 
     return TextureID;
@@ -517,7 +597,7 @@ void UpdateTextGL(uint32 ID, TTF_Font* Font, char* Text,
 	SDL_FreeSurface(Surface);
 }
 
-uint32 LoadTextGL(TTF_Font* Font, char* Text, 
+uint32 LoadTextGL(TTF_Font* Font, const char* Text, 
 					SDL_Color Color, SDL_Color BgColor = {},
 					text_render_type Type = TEXT_RENDER_BLENDED)
 {
@@ -687,6 +767,18 @@ uint32 CreateRenderer(char* VertexShaderSource, char* FragmentShaderSource)
 	glDeleteShader(FragmentShader);  
 	
 	return Program;
+}
+
+void SetViewport(const rect32 &Rect)
+{
+	glViewport((int)Rect.Pos.x, (int)Rect.Pos.y,
+			   (int)Rect.Dim.x, (int)Rect.Dim.y);
+}
+
+void SetViewportUpper(const rect32 &Rect)
+{
+	glViewport((int)Rect.Pos.x, (int)(GlobalWinDim.y - Rect.Pos.y - Rect.Dim.y),
+			   (int)Rect.Dim.x, (int)Rect.Dim.y);
 }
 
 void SetReal32(uint32 Shader, char* Location, real32 A)

@@ -79,9 +79,7 @@ void RenderSprite(uint32 Renderer, texture_data Texture, rect32* Clips,
 					real32 Theta = 0, v3 Axis = V3());
 
 //Functions for loading textures
-uint32 LoadTextureGL(char* Path, bool Alpha = false, bool Flip = false);
-
-texture_data LoadTextureGLEX(char* Path, bool Alpha = false, bool Flip = false);
+uint32 LoadTextureGL(char* Path, bool Alpha, bool Flip, int n);
 
 char* LoadShaderSource(char* Path);
 
