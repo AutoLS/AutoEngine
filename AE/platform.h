@@ -1,14 +1,9 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#define ArraySize(arr) (sizeof(arr)/sizeof(arr[0]))
-
-#if DEBUG_MODE
-#define Assert(Expression) if(!(Expression)) {*(int*)0 = 0;}
-#else 
-#define Assert(Expression)
-#endif
-
+v2 GlobalWinDim = {};
+rect32 GlobalWinRect = {};
+SDL_Window* GlobalWindow = 0;
 const uint64 PerformanceFrequency = SDL_GetPerformanceFrequency();
 const real32 SecPerCount = 1.0f / (real32)PerformanceFrequency;
 
@@ -270,16 +265,6 @@ enum mouse_button
 	BUTTON_MAX,
 };
 
-enum rect_position
-{
-	POSITION_TOP_LEFT,
-	POSITION_TOP_RIGHT,
-	POSITION_BOTTOM_LEFT,
-	POSITION_BOTTOM_RIGHT,
-	POSITION_CENTERED,
-	POSITION_CUSTOM
-};
-
 enum render_flip
 {
 	FLIP_NONE,
@@ -302,6 +287,7 @@ struct render
 	SDL_Renderer* Renderer;
 	v2i Dim;
 	v2 WinDim;
+	rect32 WinRect;
 	display Display;
 	bool MissedFrame;
 	v2 Scale;

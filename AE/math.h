@@ -5,6 +5,13 @@
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+#if DEBUG_MODE
+#define Assert(Expression) if(!(Expression)) {*(int*)0 = 0;}
+#else 
+#define Assert(Expression)
+#endif
 
 typedef int8_t int8;
 typedef int16_t int16;
@@ -12,34 +19,25 @@ typedef int32_t int32;
 typedef int64_t int64;
 typedef int32 bool32;
 typedef float real32;
+typedef double real64;
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
-#define PI 3.1415926
+#define PI 3.1415926f
 #define ONE_OVER_180 0.005555
 
 real32 Cos(real32 Theta);
 real32 Sin(real32 Theta);
 real32 Rand32(real32 Low, real32 High);
 real32 Radians(real32 Theta);
+// real32 Dot(v2 A, v2 B);
+// real32 Dot(v3 A, v3 B);
 
-struct v2 
-{
-	real32 x, y;
-};
-
-struct v2i
-{
-	int x, y;
-};
-
-struct v3
-{
-	real32 x, y, z;
-};
+#include "vec2D.h"
+#include "vec3D.h"
 
 union v4 
 {
@@ -53,7 +51,6 @@ union v4
 	};
 };
 
-
 union v4i
 {
 	struct
@@ -64,6 +61,11 @@ union v4i
 	{
 		int r, g, b, a;
 	};
+};
+
+struct coord
+{
+	v3 X, Y, Z;
 };
 
 struct rect32
@@ -79,57 +81,9 @@ struct edge
 	v2 b;
 };
 
-v2 V2(real32 x = 0, real32 y = 0)
-{
-	v2 Result = {x, y};
-	return Result;
-}
-
-v2 V2(v2i A)
-{
-	v2 Result = {(real32)A.x, (real32)A.y};
-	return Result;
-}
-
-v2 IV2()
-{
-	v2 Result = V2(1, 1);
-	return Result;
-}
-	
-v2i V2i(int x = 0, int y = 0)
-{
-	v2i Result = {x, y};
-	return Result;
-}
-
-v3 V3(real32 x = 0, real32 y = 0, real32 z = 0)
-{
-	v3 Result = {x, y, z};
-	return Result;
-}
-
-v3 V3(v2i A, real32 z = 0)
-{
-	v3 Result = {(real32)A.x, (real32)A.y, z};
-	return Result;
-}
-
-v3 V3(v2 A, real32 z = 0)
-{
-	v3 Result = {A.x, A.y, z};
-	return Result;
-}
-
 v3 V3(v4 A)
 {
 	v3 Result = {A.x, A.y, A.z};
-	return Result;
-}
-
-v3 IV3()
-{
-	v3 Result = {1, 1, 1};
 	return Result;
 }
 
@@ -145,9 +99,16 @@ v4 V4(v3 A, real32 w = 1)
 	return Result;
 }
 
-v4 Color(real32 r = 255, real32 g = 255, real32 b = 255, real32 a = 1.0f)
+inline v4 Color(real32 r = 1, real32 g = 1, real32 b = 1, real32 a = 1)
 {
-	v4 Result = {r/255, g/255, b/255, a};
+	real32 OneOver255 = 1.0f / 255.0f;
+	
+	if(r > 1) r *= OneOver255;
+	if(g > 1) g *= OneOver255;
+	if(b > 1) b *= OneOver255;
+	if(a > 1) a *= OneOver255;
+	
+	v4 Result = {r, g, b, a};
 	return Result;
 }
 
@@ -157,160 +118,7 @@ v4i V4i(int x = 0, int y = 0, int z = 0, int w = 0)
 	return Result;
 }
 
-v2 operator+(v2 A, v2 B)
-{
-	v2 Result = {A.x + B.x, A.y + B.y};
-	return Result;
-}
-
-v2 operator+(v2 A, real32 N)
-{
-	v2 Result = {A.x + N, A.y + N};
-	return Result;
-}
-
-v2 operator-(v2 A, v2 B)
-{
-	v2 Result = {A.x - B.x, A.y - B.y};
-	return Result;
-}
-
-v2 operator-(v2 A)
-{
-	v2 Result = {-A.x, -A.y};
-	return Result;
-}
-
-v2 operator*(v2 A, real32 k)
-{
-	v2 Result = {k * A.x, k * A.y};
-	return Result;
-}
-
-v2 operator*(real32 k, v2 A)
-{
-	v2 Result = {k * A.x, k * A.y};
-	return Result;
-}
-
-v2 operator*(v2 A, v2 B)
-{
-	v2 Result = {B.x * A.x, B.y * A.y};
-	return Result;
-}
-
-v2 operator/(v2 A, real32 k)
-{
-	v2 Result = {A.x/k, A.y/k};
-	return Result;
-}
-
-v2 operator/(v2 A, v2 B)
-{
-	v2 Result = {A.x/B.x, A.y/B.y};
-	return Result;
-}
-
-v2 &operator+=(v2 &A, v2 B)
-{
-	A = A + B;
-	return A;
-}
-
-v2 &operator+=(v2 &A, real32 N)
-{
-	A = A + N;
-	return A;
-}
-
-v2 &operator-=(v2 &A, v2 B)
-{
-	A = A - B;
-	return A;
-}
-
-v2 &operator/=(v2 &A, v2 B)
-{
-	A = A / B;
-	return A;
-}
-
-v3 operator+(v3 A, v3 B)
-{
-	v3 Result = {A.x + B.x, A.y + B.y, A.z + B.z};
-	return Result;
-}
-
-v3 operator-(v3 A, v3 B)
-{
-	v3 Result = {A.x - B.x, A.y - B.y, A.z - B.z};
-	return Result;
-}
-
-v3 operator-(v3 A)
-{
-	v3 Result = {-A.x, -A.y, -A.z};
-	return Result;
-}
-
-v3 operator*(v3 A, v3 B)
-{
-	v3 Result = {A.x * B.x, A.y * B.y, A.z * B.z};
-	return Result;
-}
-
-v3 operator*(v3 A, real32 k)
-{
-	v3 Result = {A.x * k, A.y * k, A.z * k};
-	return Result;
-}
-
-v3 operator*(real32 k, v3 A)
-{
-	v3 Result = {A.x * k, A.y * k, A.z * k};
-	return Result;
-}
-
-v3 operator/(v3 A, v3 B)
-{
-	v3 Result = {A.x / B.x, A.y / B.y, A.z / B.z};
-	return Result;
-}
-
-v3 operator/(v3 A, real32 k)
-{
-	v3 Result = {A.x / k, A.y / k, A.z / k};
-	return Result;
-}
-
-v3 &operator+=(v3 &A, v3 B)
-{
-	A = A + B;
-	return A;
-}
-
-v3 &operator-=(v3 &A, v3 B)
-{
-	A = A - B;
-	return A;
-}
-
-bool operator>(v2 A, real32 N)
-{
-	return A.x > N || A.y > N;
-}
-
-bool operator<(v2 A, real32 N)
-{
-	return A.x < N || A.y < N;
-}
-
-bool operator<=(v2 A, real32 N)
-{
-	return A.x <= N || A.y <= N;
-}
-
-rect32 Rect32(v2 Pos, v2 Dim)
+rect32 Rect32(v2 Pos = {}, v2 Dim = {})
 {
 	rect32 Result = {Pos, Dim};
 	return Result;
@@ -322,21 +130,98 @@ rect32 WinRect32(v2 Pos, v2 Dim)
 	return Result;
 }
 
-real32 Length(v2 A)
+v2 GetMidPoint(rect32* A, rect32* B)
 {
-	real32 Result = (real32)sqrt((A.x * A.x) + (A.y * A.y));
+	v2 Result = {};
+	Result.x = A->Pos.x + (((B->Pos.x + B->Dim.x) - A->Pos.x) * 0.5f);
+	Result.y = A->Pos.y + A->Dim.y * 0.5f;
+	
 	return Result;
 }
 
-real32 Length(v3 A)
+real32 Abs(real32 n)
 {
-	real32 Result = (real32)sqrt((A.x * A.x) + (A.y * A.y) + (A.z * A.z));
+	real32 Result = (real32)fabs(n);
+	return Result;
+}
+
+v2 Abs(v2 A)
+{
+	v2 Result = V2(Abs(A.x), Abs(A.y));
+	return Result;
+}
+
+v3 Abs(v3 A)
+{
+	v3 Result = V3(Abs(A.x), Abs(A.y), Abs(A.z));
+	return Result;
+}
+
+v2 AbsDot(v2 A)
+{
+	v2 Result = Abs(A);
+	return Result;
+}
+
+v3 AbsDot(v3 A)
+{
+	v3 Result = Abs(A);
+	return Result;
+}
+
+real32 GetMin(v3 A)
+{
+	real32 Result = (real32)fmin(A.x, (real32)fmin(A.y, A.z));
+	return Result;
+}
+
+real32 GetMax(v3 A)
+{
+	real32 Result = (real32)fmax(A.x, (real32)fmax(A.y, A.z));
+	return Result;
+}
+
+int MaxDimension(v3 A)
+{
+	int Result = (A.x > A.y) ? ((A.x > A.z) ? 0 : 2) : ((A.y > A.z) ? 1 : 2);
+	return Result;
+}
+
+v3 Permute(v3 A, int x, int y, int z)
+{
+	Assert(x >= 0 && x <= 2);
+	Assert(y >= 0 && y <= 2);
+	Assert(z >= 0 && z <= 2);
+	v3 Result = V3(A.E[x], A.E[y], A.E[z]);
+	
+	return Result;
+}
+
+coord CoordinateSystem(v3 X)
+{
+	v3 Y, Z;
+	if(Abs(X.x) > Abs(X.y))
+	{
+		Y = V3(-X.z, 0 , X.x) / sqrtf(X.x * X.x + X.z * X.z);
+	}
+	else
+	{
+		Y = V3(0, X.z, -X.y) / sqrtf(X.y * X.y + X.z * X.z);
+	}
+	Z = Cross(X, Y);
+	return {X, Y, Z};
+}
+
+v3 FaceForward(v3 N, v3 A)
+{
+	v3 Result = Dot(N, A) < 1.0f ? -N : N;
 	return Result;
 }
 
 v2 Rotate(v2 A, real32 Theta)
 {
-	v2 Result = V2(Cos(Theta)*A.x - Sin(Theta)*A.y, Sin(Theta)*A.x + Cos(Theta)*A.y);
+	v2 Result = V2(Cos(Theta)*A.x - Sin(Theta)*A.y, 
+				   Sin(Theta)*A.x + Cos(Theta)*A.y);
 	return Result;
 }
 
@@ -359,39 +244,9 @@ v3 RotateAroundOrigin(v3 A, v3 Origin, real32 Theta)
 	return Result;
 }
 
-v2 Perp_v2(v2 A)
-{
-	v2 Result = {-A.y, A.x};
-	return Result;
-}
-
 v3 Perp_v3(v3 A)
 {
 	v3 Result = {-A.y, A.x};
-	return Result;
-}
-
-v2 Normalize(v2 A)
-{
-	v2 Result = {};
-	if(Length(A) == 0)
-	{
-		return V2(1, 1);
-	}
-	else
-		Result = A / Length(A);
-	return Result;
-}
-
-v3 Normalize(v3 A)
-{
-	v3 Result = {};
-	if(Length(A) == 0)
-	{
-		return V3();
-	}
-	else
-		Result = A / Length(A);
 	return Result;
 }
 
@@ -400,27 +255,9 @@ v3 NDC(v3 A, v3 B)
 	return A / B;
 }
 
-real32 Dot(v2 A, v2 B)
-{
-	real32 Result = {A.x*B.x + A.y*B.y};
-	return Result;
-}
-
-real32 Dot(v3 A, v3 B)
-{
-	real32 Result = {A.x*B.x + A.y*B.y + A.z*B.z};
-	return Result;
-}
-
 real32 GetAngle(v2 A, v2 B)
 {
 	real32 Result = acosf(Dot(A, B) / (Length(A) * Length(B)));
-	return Result;
-}
-
-v2 Project(v2 A, v2 B)
-{
-	v2 Result = Dot(A, B) * Normalize(B); //Project A onto B;
 	return Result;
 }
 
@@ -448,16 +285,6 @@ v2 TripleProduct(v2 A, v2 B, v2 C)
 	return Result;
 }
 
-v3 Cross(v3 A, v3 B)
-{
-	v3 Result = {};
-	Result.x = A.y*B.z - A.z*B.y;
-	Result.y = A.z*B.x - A.x*B.z;
-	Result.z = A.x*B.y - A.y*B.x;
-	
-	return Result;
-}
-
 v3 Hadamard(v3 A, v3 B)
 {
     v3 Result = {A.x*B.x, A.y*B.y, A.z*B.z};
@@ -468,6 +295,13 @@ v3 Hadamard(v3 A, v3 B)
 v4 Hadamard(v4 A, v4 B)
 {
     v4 Result = {A.x*B.x, A.y*B.y, A.z*B.z, A.w*B.w};
+
+    return(Result);
+}
+
+v4 Hadamard(v4 A, real32 k)
+{
+    v4 Result = {A.x*k, A.y*k, A.z*k, A.w*k};
 
     return(Result);
 }
@@ -484,9 +318,19 @@ v3 Lerp(v3 s, v3 e, real32 t)
 	return Result;
 }
 
-struct mat4
+#ifdef USE_LEGACY_MATH
+//IMPORTANT: Matrices are construct in row major! Which means that each basis vector of a coordinate space are store in rows!
+union mat4
 {
-	real32 E[4][4];
+	struct
+	{
+		real32 E[4][4];
+	};
+	
+	struct 
+	{
+		real32 m[16];
+	};
 };
 
 mat4 Mat4()
@@ -530,7 +374,21 @@ mat4 operator*(mat4 A, mat4 B)
 	return Result;
 }
 
-v4 operator*(mat4 A, v4 B)
+v4 operator*(mat4 &A, v4 B)
+{
+	v4 Result = {};
+	real32* PtrResult = &Result.x;
+	for(int i = 0; i < 4; ++i)
+	{
+		*(PtrResult + i) = A.E[i][0] * B.x +
+						   A.E[i][1] * B.y +
+						   A.E[i][2] * B.z +
+						   A.E[i][3] * B.w;
+	}
+	return Result;
+}
+
+v4 operator*(v4 B, mat4 &A)
 {
 	v4 Result = {};
 	real32* PtrResult = &Result.x;
@@ -571,6 +429,28 @@ mat4 Scale(mat4& A, v3 K)
 	return Result;
 }
 
+mat4 ArbitraryAxisScale(v3 Axis, real32 k)
+{
+	mat4 Result = Mat4();
+	
+	v3* p = (v3*)&Result.E[0][0];
+	p->x = 1 + ((k-1)*Axis.x*Axis.x);
+	p->y = (k-1)*Axis.x*Axis.y;
+	p->z = (k-1)*Axis.x*Axis.z;
+	
+	v3* q = (v3*)&Result.E[1][0];
+	q->x = (k-1)*Axis.x*Axis.y;
+	q->y = 1 + ((k-1)*Axis.y*Axis.y);
+	q->z = ((k-1)*Axis.y*Axis.z);
+	
+	v3* r = (v3*)&Result.E[2][0];
+	r->x = (k-1)*Axis.x*Axis.z;
+	r->y = (k-1)*Axis.y*Axis.z;
+	r->z = 1 + ((k-1)*Axis.z*Axis.z);
+	
+	return Result;
+}
+
 mat4 Translate(mat4 A, v3 T)
 {
 	mat4 Result = A;
@@ -578,13 +458,7 @@ mat4 Translate(mat4 A, v3 T)
 	Result.E[0][3] += T.x;
 	Result.E[1][3] += T.y;
 	Result.E[2][3] += T.z;
-#if 0
-	real32* Ptr = &T.x;
-	for(int r = 0; r < 3; ++r)
-	{
-		Result.E[r][3] += *(Ptr + r);
-	}
-#endif
+
 	return Result;
 }
 
@@ -594,14 +468,18 @@ mat4 Rotate(mat4 A, v3 Axis, real32 Theta)
 	Axis = Normalize(Axis);
 	
 	mat4 Result = Mat4();
+	
+	//p'
 	Result.E[0][0] = cosf(Theta) + ((Axis.x * Axis.x) * (1 - cosf(Theta)));
 	Result.E[0][1] = (Axis.x * Axis.y * (1 - cosf(Theta))) - (Axis.z * sinf(Theta));
 	Result.E[0][2] = (Axis.x * Axis.z * (1 - cosf(Theta))) + (Axis.y * sinf(Theta));
 	
+	//q'
 	Result.E[1][0] = (Axis.y * Axis.x * (1 - cosf(Theta))) + (Axis.z * sinf(Theta));
 	Result.E[1][1] = cosf(Theta) + ((Axis.y * Axis.y) * (1 - cosf(Theta)));
 	Result.E[1][2] = (Axis.z * Axis.y * (1 - cosf(Theta))) - (Axis.x * sinf(Theta));
 	
+	//r'
 	Result.E[2][0] = (Axis.z * Axis.x * (1 - cosf(Theta))) - (Axis.y * sinf(Theta));
 	Result.E[2][1] = (Axis.z * Axis.y * (1 - cosf(Theta))) + (Axis.x * sinf(Theta));
 	Result.E[2][2] = cosf(Theta) + ((Axis.z * Axis.z) * (1 - cosf(Theta)));
@@ -684,6 +562,9 @@ mat4 LookAt(v3 Pos, v3 Target, v3 Up)
 	
 	return Rotation * Translation;
 }
+#else 
+#include "mat4D.h"
+#endif
 
 int Min(int A, int B, int Equal = 0)
 {
@@ -804,9 +685,230 @@ Linear1ToSRGB255(v4 C)
     return(Result);
 }
 
+//Top left
+bool IsPointInRect(v2 Point, rect32* Rect)
+{
+	if(Point.x < Rect->Pos.x)
+	{
+		return false;
+	}
+	if(Point.x > Rect->Pos.x + Rect->Dim.x)
+	{
+		return false;
+	}
+	if(Point.y < Rect->Pos.y)
+	{
+		return false;
+	}
+	if(Point.y > Rect->Pos.y + Rect->Dim.y)
+	{
+		return false;
+	}
+	return true;
+}
+
+enum rect_position
+{
+	POSITION_TOP_LEFT,
+	POSITION_TOP_RIGHT,
+	POSITION_BOTTOM_LEFT,
+	POSITION_BOTTOM_RIGHT,
+	POSITION_CENTERED,
+	POSITION_CUSTOM
+};
+
+v2 GetPos(v2 Offset, v2 DstDim, rect_position Position = POSITION_CENTERED)
+{
+	v2 Result = {};
+	
+	switch(Position)
+	{
+		case POSITION_CENTERED:
+		{
+			Result = DstDim * 0.5f + Offset;
+		};
+		
+		case POSITION_TOP_RIGHT:
+		{
+			Result = V2(DstDim.x, 0) + Offset;
+		};
+	}
+	
+	return Result;
+}
+
+v2 GetMaxPosX(v2 Pos, v2 Dim)
+{
+	v2 Result = {Pos.x + Dim.x, Pos.y};
+	return Result;
+}
+
+v2 GetMaxPosFromRectX(rect32* Rect)
+{
+	v2 Result = {};
+	Result = V2(Rect->Pos.x + Rect->Dim.x, Rect->Pos.y);
+	
+	return Result;
+}
+
+void SetRect32ScreenSpace(rect32* src, rect32* dst, v2 Offset, 
+						  rect_position Position)
+{
+	switch(Position)
+	{
+		case POSITION_CENTERED:
+		{
+			src->Pos.x = dst->Pos.x + (dst->Dim.x*0.5f) + Offset.x - 
+						 (src->Dim.x*0.5f);
+			src->Pos.y = dst->Pos.y + (dst->Dim.y*0.5f) + Offset.y - 
+						 (src->Dim.y*0.5f);
+		} break;
+		case POSITION_TOP_RIGHT:
+		{
+			src->Pos.x = dst->Pos.x + dst->Dim.x + Offset.x - src->Dim.x;
+			src->Pos.y = dst->Pos.y + Offset.y;
+		} break;
+		case POSITION_TOP_LEFT:
+		{
+			src->Pos.x = dst->Pos.x + Offset.x;
+			src->Pos.y = dst->Pos.y + Offset.y;
+		} break;
+		case POSITION_BOTTOM_LEFT:
+		{
+			src->Pos.x = dst->Pos.x + Offset.x;
+			src->Pos.y = dst->Pos.y + dst->Dim.y + Offset.y - src->Dim.y;
+		} break;
+		case POSITION_BOTTOM_RIGHT:
+		{
+			src->Pos.x = dst->Pos.x + dst->Dim.x + Offset.x - src->Dim.x;
+			src->Pos.y = dst->Pos.y + dst->Dim.y + Offset.y - src->Dim.y;
+		} break;
+	}
+}
+
+void SetRect32(rect32* src, rect32* dst, v2 Offset, 
+			   v2 Scale, v2 Dim, rect_position Position)
+{
+	real32 w;
+	real32 h;
+	
+	if(Dim.x || Dim.y)
+	{
+		w = Dim.x;
+		h = Dim.y;
+	}
+	else
+	{
+		w = src->Dim.x;
+		h = src->Dim.y;
+	}
+	
+	w *= Scale.x;
+	h *= Scale.y;
+	src->Dim.x = w;
+	src->Dim.y = h;
+	
+	switch(Position)
+	{
+		case POSITION_TOP_RIGHT:
+		{
+			src->Pos.x = dst->Pos.x + (dst->Dim.x * 0.5f) + Offset.x - (src->Dim.x * 0.5f);
+			src->Pos.y = dst->Pos.y - (dst->Dim.y * 0.5f) + Offset.y + (src->Dim.y * 0.5f);
+		} break;
+		case POSITION_TOP_LEFT:
+		{
+			src->Pos.x = dst->Pos.x + Offset.x + (src->Dim.x * 0.5f);
+			src->Pos.y = dst->Pos.y + Offset.y + (src->Dim.y * 0.5f);
+		} break;
+		case POSITION_BOTTOM_LEFT:
+		{
+			src->Pos.x = dst->Pos.x + Offset.x + (src->Dim.x * 0.5f);
+			src->Pos.y = dst->Pos.y + (dst->Dim.y) + Offset.y - (src->Dim.y * 0.5f);
+		} break;
+		case POSITION_BOTTOM_RIGHT:
+		{
+			src->Pos.x = dst->Pos.x + (dst->Dim.x * 0.5f) + Offset.x - (src->Dim.x * 0.5f);
+			src->Pos.y = dst->Pos.y + (dst->Dim.y * 0.5f) + Offset.y - (src->Dim.y * 0.5f);
+		} break;
+	}
+}
+
+void SetRectPosition(SDL_Rect* SrcRect, SDL_Rect* DstRect, 
+					 v2 Offset, rect_position Position = POSITION_CENTERED)
+{
+	switch(Position)
+	{
+		case POSITION_CENTERED:
+		{
+			
+		} break;
+	}
+}
+
+void SetRectPosition(SDL_Rect* Rect, v2 Offset, v2 Scale, v2 ScreenDimension, 
+						rect_position Postion, v2 Dimension = {})
+{
+	real32 w;
+	real32 h;
+	
+	if(Dimension.x || Dimension.y)
+	{
+		w = Dimension.x;
+		h = Dimension.y;
+	}
+	else
+	{
+		w = (real32)Rect->w;
+		h = (real32)Rect->h;
+	}
+	
+	w *= Scale.x;
+	h *= Scale.y;
+	Rect->w = (int)w;
+	Rect->h = (int)h;
+	switch(Postion)
+	{
+		case POSITION_CENTERED:
+		{
+			Rect->x = (int)((ScreenDimension.x - Rect->w) * 0.5f + Offset.x);
+			Rect->y = (int)((ScreenDimension.y - Rect->h) * 0.5f + Offset.y);
+		} break;
+		case POSITION_BOTTOM_RIGHT:
+		{
+			Rect->x = (int)(ScreenDimension.x - Rect->w + Offset.x);
+			Rect->y = (int)(ScreenDimension.y - Rect->h + Offset.y);
+		} break;
+		case POSITION_BOTTOM_LEFT:
+		{
+			Rect->x = (int)(0 + Offset.x);
+			Rect->y = (int)(ScreenDimension.y - Rect->h + Offset.y);
+		} break;
+		case POSITION_TOP_LEFT:
+		{
+			Rect->x = (int)(0 + Offset.x);
+			Rect->y = (int)(0 + Offset.y);
+		} break;
+		case POSITION_TOP_RIGHT:
+		{
+			Rect->x = (int)(ScreenDimension.x - Rect->w + Offset.x);
+			Rect->y = (int)(0 + Offset.y);
+		} break;
+		case POSITION_CUSTOM:
+		{
+			Rect->x = (int)(Offset.x);
+			Rect->y = (int)(Offset.y);
+		} break;
+	}
+}
+
 void PrintV2(v2 A)
 {
 	printf("(%.1f, %.1f)\n", A.x, A.y);
+}
+
+void PrintV2(v2i A)
+{
+	printf("(%d, %d)\n", A.x, A.y);
 }
 
 void PrintV3(v3 A)

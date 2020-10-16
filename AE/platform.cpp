@@ -83,13 +83,16 @@ render InitGraphics(char* Title, v2i Dim, Uint32 Flags)
 {
 	render Graphics = {};
 	bool Success = true;
+	GlobalWinDim = V2(Dim);
 	Graphics.Dim = Dim;
 	Graphics.WinDim = V2(Dim);
+	Graphics.WinRect = {V2(), Graphics.WinDim};
+	GlobalWinRect = Graphics.WinRect;
 	Graphics.Window = SDL_CreateWindow(Title, 
-										SDL_WINDOWPOS_UNDEFINED, 
-										SDL_WINDOWPOS_UNDEFINED, 
-										Dim.x, Dim.y,
-										Flags);
+									   SDL_WINDOWPOS_UNDEFINED, 
+									   SDL_WINDOWPOS_UNDEFINED, 
+									   Dim.x, Dim.y,
+									   Flags);
 	if(!Graphics.Window)
 	{
 		printf("Create window failed: %s\n", SDL_GetError());
@@ -122,6 +125,7 @@ render InitGraphics(char* Title, v2i Dim, Uint32 Flags)
 #endif
 		Graphics.Display = InitDisplay(Graphics.Window);
 	}
+	GlobalWindow = Graphics.Window;
 	return Graphics;
 }
 
@@ -244,6 +248,16 @@ int GetStrLen(char* str, char* End)
 	return Result-1;
 }
 
+std::string Stringify(char* Buffer)
+{
+	std::string str = "";
+	for(int i = 0; i < (int)strlen(Buffer); ++i)
+	{
+		str += Buffer[i];
+	}
+	return str;
+}
+
 char* ConcatStr(char* s1, char* s2)
 {
 	char* Result = (char*)malloc(strlen(s1) + strlen(s2) + 1);
@@ -351,8 +365,13 @@ bool HandleEvents(SDL_Event* Event, game_input* Input, render* Graphics)
 			{
 				case SDL_WINDOWEVENT_RESIZED:
 				{
-					SDL_GetWindowSize(Graphics->Window, &Graphics->Dim.x, &Graphics->Dim.y);
+					SDL_GetWindowSize(Graphics->Window, 
+									  &Graphics->Dim.x, 
+									  &Graphics->Dim.y);
 					Graphics->WinDim = V2(Graphics->Dim);
+					Graphics->WinRect = {V2(), Graphics->WinDim};
+					GlobalWinRect = Graphics->WinRect;
+					GlobalWinDim = Graphics->WinDim;
 #if PROJECT_GL
 					glViewport(0, 0, Graphics->Dim.x, Graphics->Dim.y);
 #endif
@@ -1034,10 +1053,10 @@ bool ReadDirectory(char* Path, array_c* List, bool OmitFileExt = false)
 					int Len = GetStrLen(EntryName, ".");
 					char NewEntryName[100] = {};
 					strncpy(NewEntryName, EntryName, Len);
-					Append(List, string(NewEntryName));
+					Append(List, NewEntryName);
 				}
 				else
-					Append(List, string(EntryName));
+					Append(List, EntryName);
 				printf("%s\n", Entry->d_name);
 			}
 			++Count;
@@ -1199,210 +1218,4 @@ SDL_Rect SetRectRounded(rect32 Rect)
 {
 	SDL_Rect Result = SetRectRounded(Rect.Pos, Rect.Dim);
 	return Result;
-}
-
-//Top left
-bool IsPointInRect(v2 Point, rect32* Rect)
-{
-	if(Point.x < Rect->Pos.x)
-	{
-		return false;
-	}
-	if(Point.x > Rect->Pos.x + Rect->Dim.x)
-	{
-		return false;
-	}
-	if(Point.y < Rect->Pos.y)
-	{
-		return false;
-	}
-	if(Point.y > Rect->Pos.y + Rect->Dim.y)
-	{
-		return false;
-	}
-	return true;
-}
-
-v2 GetPos(v2 Offset, v2 DstDim, rect_position Position = POSITION_CENTERED)
-{
-	v2 Result = {};
-	
-	switch(Position)
-	{
-		case POSITION_CENTERED:
-		{
-			Result = DstDim * 0.5f + Offset;
-		};
-		
-		case POSITION_TOP_RIGHT:
-		{
-			Result = V2(DstDim.x, 0) + Offset;
-		};
-	}
-	
-	return Result;
-}
-
-v2 GetMaxPosX(v2 Pos, v2 Dim)
-{
-	v2 Result = {Pos.x + Dim.x, Pos.y};
-	return Result;
-}
-
-v2 GetMaxPosFromRectX(rect32* Rect)
-{
-	v2 Result = {};
-	Result = V2(Rect->Pos.x + Rect->Dim.x, Rect->Pos.y);
-	
-	return Result;
-}
-
-void SetRect32ScreenSpace(rect32* src, rect32* dst, v2 Offset, 
-						  rect_position Position)
-{
-	switch(Position)
-	{
-		case POSITION_CENTERED:
-		{
-			src->Pos.x = dst->Pos.x + (dst->Dim.x*0.5f) + Offset.x - 
-						 (src->Dim.x*0.5f);
-			src->Pos.y = dst->Pos.y + (dst->Dim.y*0.5f) + Offset.y - 
-						 (src->Dim.y*0.5f);
-		} break;
-		case POSITION_TOP_RIGHT:
-		{
-			src->Pos.x = dst->Pos.x + dst->Dim.x + Offset.x - src->Dim.x;
-			src->Pos.y = dst->Pos.y + Offset.y + src->Dim.y;
-		} break;
-		case POSITION_TOP_LEFT:
-		{
-			src->Pos.x = dst->Pos.x + Offset.x;
-			src->Pos.y = dst->Pos.y + Offset.y;
-		} break;
-		case POSITION_BOTTOM_LEFT:
-		{
-			src->Pos.x = dst->Pos.x + Offset.x;
-			src->Pos.y = dst->Pos.y + dst->Dim.y + Offset.y - src->Dim.y;
-		} break;
-		case POSITION_BOTTOM_RIGHT:
-		{
-			src->Pos.x = dst->Pos.x + dst->Dim.x + Offset.x - src->Dim.x;
-			src->Pos.y = dst->Pos.y + dst->Dim.y + Offset.y - src->Dim.y;
-		} break;
-	}
-}
-
-void SetRect32(rect32* src, rect32* dst, v2 Offset, 
-			   v2 Scale, v2 Dim, rect_position Position)
-{
-	real32 w;
-	real32 h;
-	
-	if(Dim.x || Dim.y)
-	{
-		w = Dim.x;
-		h = Dim.y;
-	}
-	else
-	{
-		w = src->Dim.x;
-		h = src->Dim.y;
-	}
-	
-	w *= Scale.x;
-	h *= Scale.y;
-	src->Dim.x = w;
-	src->Dim.y = h;
-	
-	switch(Position)
-	{
-		case POSITION_TOP_RIGHT:
-		{
-			src->Pos.x = dst->Pos.x + (dst->Dim.x * 0.5f) + Offset.x - (src->Dim.x * 0.5f);
-			src->Pos.y = dst->Pos.y - (dst->Dim.y * 0.5f) + Offset.y + (src->Dim.y * 0.5f);
-		} break;
-		case POSITION_TOP_LEFT:
-		{
-			src->Pos.x = dst->Pos.x + Offset.x + (src->Dim.x * 0.5f);
-			src->Pos.y = dst->Pos.y + Offset.y + (src->Dim.y * 0.5f);
-		} break;
-		case POSITION_BOTTOM_LEFT:
-		{
-			src->Pos.x = dst->Pos.x + Offset.x + (src->Dim.x * 0.5f);
-			src->Pos.y = dst->Pos.y + (dst->Dim.y) + Offset.y - (src->Dim.y * 0.5f);
-		} break;
-		case POSITION_BOTTOM_RIGHT:
-		{
-			src->Pos.x = dst->Pos.x + (dst->Dim.x * 0.5f) + Offset.x - (src->Dim.x * 0.5f);
-			src->Pos.y = dst->Pos.y + (dst->Dim.y * 0.5f) + Offset.y - (src->Dim.y * 0.5f);
-		} break;
-	}
-}
-
-void SetRectPosition(SDL_Rect* SrcRect, SDL_Rect* DstRect, 
-					 v2 Offset, rect_position Position = POSITION_CENTERED)
-{
-	switch(Position)
-	{
-		case POSITION_CENTERED:
-		{
-			
-		} break;
-	}
-}
-
-void SetRectPosition(SDL_Rect* Rect, v2 Offset, v2 Scale, v2 ScreenDimension, 
-						rect_position Postion, v2 Dimension = {})
-{
-	real32 w;
-	real32 h;
-	
-	if(Dimension.x || Dimension.y)
-	{
-		w = Dimension.x;
-		h = Dimension.y;
-	}
-	else
-	{
-		w = (real32)Rect->w;
-		h = (real32)Rect->h;
-	}
-	
-	w *= Scale.x;
-	h *= Scale.y;
-	Rect->w = (int)w;
-	Rect->h = (int)h;
-	switch(Postion)
-	{
-		case POSITION_CENTERED:
-		{
-			Rect->x = (int)((ScreenDimension.x - Rect->w) * 0.5f + Offset.x);
-			Rect->y = (int)((ScreenDimension.y - Rect->h) * 0.5f + Offset.y);
-		} break;
-		case POSITION_BOTTOM_RIGHT:
-		{
-			Rect->x = (int)(ScreenDimension.x - Rect->w + Offset.x);
-			Rect->y = (int)(ScreenDimension.y - Rect->h + Offset.y);
-		} break;
-		case POSITION_BOTTOM_LEFT:
-		{
-			Rect->x = (int)(0 + Offset.x);
-			Rect->y = (int)(ScreenDimension.y - Rect->h + Offset.y);
-		} break;
-		case POSITION_TOP_LEFT:
-		{
-			Rect->x = (int)(0 + Offset.x);
-			Rect->y = (int)(0 + Offset.y);
-		} break;
-		case POSITION_TOP_RIGHT:
-		{
-			Rect->x = (int)(ScreenDimension.x - Rect->w + Offset.x);
-			Rect->y = (int)(0 + Offset.y);
-		} break;
-		case POSITION_CUSTOM:
-		{
-			Rect->x = (int)(Offset.x);
-			Rect->y = (int)(Offset.y);
-		} break;
-	}
 }
