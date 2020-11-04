@@ -1,7 +1,9 @@
 # AutoEngine
 My personal game engine. 
 
-Since it's my first engine it's pretty messy so I'm planning to rewrite the engine soon and going to build as a dll. 
+Since it's my first engine it's pretty messy so I'm planning to rewrite the engine soon.
+
+Newer version: https://github.com/AutoLS/AutoEngine_v2
 
 This engine uses SDL2.0, glad, and stb libraries.
 
