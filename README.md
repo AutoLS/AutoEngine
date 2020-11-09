@@ -1,7 +1,7 @@
 # AutoEngine
 My personal game engine. 
 
-Since it's my first engine it's pretty messy so I'm planning to rewrite the engine soon.
+Since it's my first engine it's pretty messy so I'm planning to rewrite the engine.
 
 Newer version: https://github.com/AutoLS/AutoEngine_v2
 
